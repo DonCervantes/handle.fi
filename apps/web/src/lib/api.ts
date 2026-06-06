@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// Use /api/... in production (Vercel serverless) or NEXT_PUBLIC_API_URL if set
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 async function request<T>(
   path: string,

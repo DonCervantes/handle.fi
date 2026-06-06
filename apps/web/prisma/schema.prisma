@@ -1,0 +1,155 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  privyId       String   @unique
+  walletAddress     String?
+  createdAt         DateTime           @default(now())
+  onboardedAt       DateTime?
+  agents            Agent[]
+  vendors           Vendor[]
+  invoices          Invoice[]
+  treasuryPositions TreasuryPosition[]
+  organization      Organization?
+  employees         Employee[]
+}
+
+model Organization {
+  id                 String   @id @default(cuid())
+  ownerId            String   @unique
+  owner              User     @relation(fields: [ownerId], references: [id])
+  name               String
+  rfc                String?
+  industry           String
+  country            String   @default("MX")
+  employeeCount      Int      @default(0)
+  monthlyRevenueUSD  Float    @default(0)
+  hasIntlVendors     Boolean  @default(false)
+  operatingCountries Json?
+  idleCashUSD        Float    @default(0)
+  preferYield        Boolean  @default(true)
+  createdAt          DateTime @default(now())
+}
+
+model Employee {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  name      String
+  role      String
+  country   String   @default("MX")
+  salary    Float
+  currency  String   @default("MXN")
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+}
+
+model Agent {
+  id          String       @id @default(cuid())
+  ownerId     String
+  owner       User         @relation(fields: [ownerId], references: [id])
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  credentials Credential[]
+  actions     Action[]
+}
+
+model Credential {
+  id             String   @id @default(cuid())
+  agentId        String
+  agent          Agent    @relation(fields: [agentId], references: [id])
+  credentialHash String
+  policyHash     String
+  onChainTxHash  String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  policies       Policy[]
+}
+
+model Policy {
+  id           String     @id @default(cuid())
+  credentialId String
+  credential   Credential @relation(fields: [credentialId], references: [id])
+  policyJson   Json
+  policyHash   String
+  createdAt    DateTime   @default(now())
+}
+
+model Action {
+  id         String     @id @default(cuid())
+  agentId    String
+  agent      Agent      @relation(fields: [agentId], references: [id])
+  actionType String
+  payload    Json
+  status     String     // APPROVED | REJECTED | PENDING
+  createdAt  DateTime   @default(now())
+  auditLogs  AuditLog[]
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actionId   String
+  action     Action   @relation(fields: [actionId], references: [id])
+  decision   String
+  reason     String?
+  actionHash String?
+  txHash     String?
+  createdAt  DateTime @default(now())
+}
+
+// ── LatAm Financial Platform Models ──────────────────────────
+
+model Vendor {
+  id            String    @id @default(cuid())
+  ownerId       String
+  owner         User      @relation(fields: [ownerId], references: [id])
+  name          String
+  country       String    // MX, US, CN, AR, CO, etc.
+  currency      String    // USD, MXN, USDC
+  paymentMethod String    // SPEI, USDC, WIRE
+  walletAddress String?
+  bankAccount   String?
+  email         String?
+  status        String    @default("active") // active, inactive
+  createdAt     DateTime  @default(now())
+  invoices      Invoice[]
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+  vendorId    String
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  amount      Float
+  currency    String
+  description String?
+  dueDate     DateTime?
+  status      String    @default("pending") // pending, approved, paid, rejected
+  aiExtracted Json?     // data extracted by AI from invoice text
+  txHash      String?   // on-chain payment tx
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model TreasuryPosition {
+  id                   String   @id @default(cuid())
+  ownerId              String
+  owner                User     @relation(fields: [ownerId], references: [id])
+  asset                String   // CETES, USTRY
+  amountInvested       Float
+  currentValue         Float
+  apy                  Float
+  bondType             String   // CETES_MXN, US_TREASURY
+  openedAt             DateTime @default(now())
+  redemptionEligibleAt DateTime?
+  status               String   @default("active") // active, redeemed
+}
