@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 
 const arbitrumSepolia = {
@@ -17,9 +18,19 @@ const arbitrumSepolia = {
 };
 
 export function PrivyWrapper({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+  // Don't render Privy until client-side mounted AND we have an appId
+  if (!mounted || !appId) {
+    return <>{children}</>;
+  }
+
   return (
     <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+      appId={appId}
       config={{
         loginMethods: ["email", "wallet"],
         appearance: {
