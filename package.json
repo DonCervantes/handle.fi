@@ -1,0 +1,25 @@
+{
+  "name": "handle-fi",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "db:generate": "npm run db:generate --workspace=apps/api",
+    "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "contracts:compile": "npm run compile --workspace=packages/contracts",
+    "contracts:deploy": "npm run deploy --workspace=packages/contracts"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "binary-extensions": "^3.1.0",
+    "mime-db": "^1.54.0",
+    "mime-types": "^3.0.2"
+  }
+}

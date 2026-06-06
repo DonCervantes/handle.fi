@@ -1,0 +1,39 @@
+{
+  "name": "@handle-fi/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run build && node dist/index.js",
+    "dev:watch": "node dist/index.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@etherfuse/stablebond-sdk": "^3.0.4",
+    "@prisma/client": "^5.14.0",
+    "@privy-io/server-auth": "^1.16.0",
+    "@solana/web3.js": "^1.98.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "openai": "^4.52.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.19.41",
+    "prisma": "^5.14.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.0"
+  }
+}

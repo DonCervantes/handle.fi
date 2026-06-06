@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+.next
+out
+build
+*.tsbuildinfo
+
+# Environment files — NEVER commit
+.env
+.env.local
+.env*.local
+.env.production
+.env.development
+
+# Hardhat
+cache
+artifacts
+typechain-types
+deployments/*.json
+!deployments/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Test files used during dev
+test_*.js

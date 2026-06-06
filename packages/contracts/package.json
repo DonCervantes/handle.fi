@@ -1,0 +1,28 @@
+{
+  "name": "@handle-fi/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts --network arbitrumSepolia",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.6",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
+    "@typechain/hardhat": "^9.1.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "chai": "^4.4.1",
+    "ethers": "^6.13.0",
+    "hardhat": "^2.22.0",
+    "typechain": "^8.3.2",
+    "typescript": "^5.4.0",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.14.0",
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.7",
+    "dotenv": "^16.4.5"
+  }
+}
