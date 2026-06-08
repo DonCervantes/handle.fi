@@ -11,15 +11,15 @@ export function Hero() {
       {/* Glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center space-y-8">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6 sm:space-y-8">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300 text-xs font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-          Construido para empresas en LatAm · Arbitrum · Privy · Bitso · EtherFuse
+        <div className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300 text-[10px] sm:text-xs font-medium max-w-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
+          <span className="truncate sm:whitespace-normal">Construido para LatAm · Arbitrum · Privy · Bitso · EtherFuse</span>
         </div>
 
         {/* H1 */}
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.05]">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.05] break-words">
           Las finanzas de tu empresa,{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400">
             en automático.
@@ -27,28 +27,28 @@ export function Hero() {
         </h1>
 
         {/* Subhead */}
-        <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-sm sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
           {t("hero_sub")}
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full max-w-md mx-auto sm:max-w-none">
           <Link
             href="/demo"
-            className="px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all hover:scale-105 text-base"
+            className="px-6 sm:px-8 py-3 sm:py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all hover:scale-105 text-sm sm:text-base text-center"
           >
             {t("hero_cta1")}
           </Link>
           <a
             href="#platform"
-            className="px-8 py-4 border border-white/15 hover:border-white/30 text-white font-medium rounded-xl transition-all text-base"
+            className="px-6 sm:px-8 py-3 sm:py-4 border border-white/15 hover:border-white/30 text-white font-medium rounded-xl transition-all text-sm sm:text-base text-center"
           >
             {t("hero_cta2")}
           </a>
         </div>
 
-        {/* Dashboard mock */}
-        <div className="mt-16 relative max-w-4xl mx-auto">
+        {/* Dashboard mock — solo desktop */}
+        <div className="hidden md:block mt-16 relative max-w-4xl mx-auto">
           <div style={{ border: "1px solid #E5E1DA", borderRadius: "16px", backgroundColor: "#FFFFFF", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.08)" }}>
             {/* Mock browser bar */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 16px", borderBottom: "1px solid #E5E1DA", backgroundColor: "#F5F2EC" }}>
