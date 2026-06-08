@@ -4,6 +4,8 @@
 > Agentes de IA con identidad on-chain que ejecutan pagos, nómina y tesorería.
 > Web3 invisible. AI agéntica. LATAM primero.
 
+**🌐 Live demo:** [handle-fi.vercel.app](https://handle-fi.vercel.app)
+
 [![Built with](https://img.shields.io/badge/Built%20with-Arbitrum%20%7C%20Privy%20%7C%20Etherfuse-1A1A1A?style=for-the-badge)]()
 
 ---
