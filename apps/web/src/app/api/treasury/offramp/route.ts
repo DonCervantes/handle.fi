@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/prisma";
 import { getAuthContext } from "@/server/auth";
-import { offrampCETEStoMXN } from "@/server/services/etherfuseService";
+import { offrampCETEStoMXN, CHAIN_CONFIG, type Blockchain } from "@/server/services/etherfuseService";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,9 +10,7 @@ export const maxDuration = 60;
 const schema = z.object({
   positionId: z.string().optional(),
   amountCETES: z.number().positive(),
-  walletAddress: z.string().default(""),
-  customerId: z.string().default(""),
-  bankAccountId: z.string().default(""),
+  blockchain: z.enum(["base", "stellar", "solana"]).default("stellar"),
 });
 
 export async function POST(req: NextRequest) {
@@ -27,13 +25,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { positionId, amountCETES } = parsed.data;
-  const walletAddress = parsed.data.walletAddress || process.env.ETHERFUSE_DEMO_WALLET || "";
-  const customerId = parsed.data.customerId || process.env.ETHERFUSE_DEMO_CUSTOMER_ID || "";
-  const bankAccountId = parsed.data.bankAccountId || process.env.ETHERFUSE_DEMO_BANK_ACCOUNT_ID || "";
+  const { positionId, amountCETES, blockchain } = parsed.data as { positionId?: string; amountCETES: number; blockchain: Blockchain };
+  const config = CHAIN_CONFIG[blockchain];
+
+  if (!config.customerId || !config.bankAccountId) {
+    return NextResponse.json({ error: `${config.label} no está configurado.` }, { status: 400 });
+  }
 
   try {
-    const { quote, order } = await offrampCETEStoMXN(amountCETES, customerId, bankAccountId, walletAddress);
+    const { quote, order } = await offrampCETEStoMXN(
+      amountCETES, config.customerId, config.bankAccountId, config.wallet, blockchain
+    );
 
     if (positionId) {
       const position = await prisma.treasuryPosition.findFirst({
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const destMXN = typeof quote.destinationAmount === "string" ? parseFloat(quote.destinationAmount) : quote.destinationAmount;
     return NextResponse.json({
       etherfuse: {
         orderId: order.orderId,
@@ -57,10 +60,12 @@ export async function POST(req: NextRequest) {
         burnTransaction: order.burnTransaction,
         exchangeRate: parseFloat(quote.exchangeRate as any),
         sourceCETES: amountCETES,
-        destinationMXN: typeof quote.destinationAmount === "string" ? parseFloat(quote.destinationAmount) : quote.destinationAmount,
+        destinationMXN: destMXN,
+        blockchain,
+        blockchainLabel: config.label,
         isReal: true,
       },
-      message: `✅ ${amountCETES} CETES → ${(typeof quote.destinationAmount === "string" ? parseFloat(quote.destinationAmount) : quote.destinationAmount).toFixed(2)} MXN | Pago procesado`,
+      message: `✅ ${amountCETES} CETES → ${destMXN.toFixed(2)} MXN desde ${config.label} | Pago procesado`,
     });
   } catch (err: any) {
     console.error("[Treasury offramp]", err);

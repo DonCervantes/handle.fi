@@ -482,8 +482,15 @@ interface EfState {
   error?: string;
 }
 
+const CHAINS = [
+  { id: "stellar", label: "Stellar", emoji: "⭐", desc: "Fast & low fees" },
+  { id: "base", label: "Base (EVM)", emoji: "🔵", desc: "Coinbase L2" },
+] as const;
+type ChainId = typeof CHAINS[number]["id"];
+
 function EtherfusePanel() {
   const [amount, setAmount] = useState(300);
+  const [blockchain, setBlockchain] = useState<ChainId>("stellar");
   const [state, setState] = useState<EfState>({ loading: false, step: "idle", amount: 300 });
   const [yieldEarned, setYieldEarned] = useState(0);
 
@@ -501,7 +508,7 @@ function EtherfusePanel() {
   async function runOnramp() {
     setState({ loading: true, step: "quoting", amount, error: undefined });
     try {
-      const data = await api.post<any>("/treasury/onramp", { amountMXN: amount });
+      const data = await api.post<any>("/treasury/onramp", { amountMXN: amount, blockchain });
       setState({ loading: false, step: "done", amount, onrampResult: data });
     } catch (err: any) {
       setState({ loading: false, step: "idle", amount, error: err.message ?? "Error" });
@@ -513,7 +520,7 @@ function EtherfusePanel() {
     setState((s) => ({ ...s, loading: true, step: "offramping", error: undefined }));
     try {
       const cetesAmount = Math.max(50, Math.floor(parseFloat(state.onrampResult.etherfuse?.destinationCETES ?? "100") * 0.5));
-      const data = await api.post<any>("/treasury/offramp", { amountCETES: cetesAmount });
+      const data = await api.post<any>("/treasury/offramp", { amountCETES: cetesAmount, blockchain });
       setState((s) => ({ ...s, loading: false, step: "done", offrampResult: data }));
     } catch (err: any) {
       setState((s) => ({ ...s, loading: false, error: err.message ?? "Error" }));
@@ -541,7 +548,7 @@ function EtherfusePanel() {
               EtherFuse Treasury
             </span>
             <span style={{ fontSize: 9, color: "#2E6F4E", backgroundColor: "rgba(46,111,78,0.10)", padding: "2px 6px", borderRadius: 99, border: "1px solid rgba(46,111,78,0.2)" }}>
-              ● LIVE on Base
+              ● LIVE on {state.onrampResult?.etherfuse?.blockchainLabel ?? CHAINS.find(c => c.id === blockchain)?.label}
             </span>
           </div>
           <div style={{ fontSize: 10, color: "#9B9690", marginTop: 2 }}>
@@ -555,10 +562,40 @@ function EtherfusePanel() {
 
       {/* Step 1: Onramp form */}
       {!hasOnramp && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div style={{ fontSize: 11, color: "#6B675F" }}>
             TreasuryBot va a invertir cash idle en CETES via EtherFuse Ramp API
           </div>
+
+          {/* Blockchain selector */}
+          <div>
+            <div style={{ fontSize: 10, color: "#8A7560", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 6 }}>
+              Blockchain
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {CHAINS.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setBlockchain(c.id)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 6px",
+                    fontSize: 11,
+                    border: blockchain === c.id ? "2px solid #1A1A1A" : "1px solid #E5E1DA",
+                    backgroundColor: blockchain === c.id ? "#F5F2EC" : "#FFFFFF",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 14 }}>{c.emoji}</div>
+                  <div style={{ fontWeight: 600, color: "#1A1A1A", marginTop: 2 }}>{c.label}</div>
+                  <div style={{ fontSize: 9, color: "#9B9690" }}>{c.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -676,7 +713,7 @@ function EtherfusePanel() {
       )}
 
       <div style={{ paddingTop: 6, borderTop: "1px solid #E5E1DA", fontSize: 9, color: "#9B9690" }}>
-        Real API calls → EtherFuse sandbox · Chain: Base EVM · CETES: 0xcC77c...cE29
+        Real API calls → EtherFuse sandbox · Chain: {state.onrampResult?.etherfuse?.blockchainLabel ?? CHAINS.find(c => c.id === blockchain)?.label}
       </div>
     </div>
   );

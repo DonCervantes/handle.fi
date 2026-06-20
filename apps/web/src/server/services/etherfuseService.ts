@@ -8,10 +8,46 @@ import crypto from "crypto";
 const BASE_URL = process.env.ETHERFUSE_API_URL ?? "https://api.sand.etherfuse.com";
 const API_KEY  = process.env.ETHERFUSE_API_KEY ?? "";
 
-// CETES on Base (EVM) — compatible directly with Arbitrum/EVM ecosystem
-const CETES_IDENTIFIER = "0xcC77c598d42f2f78Beb42C91d12B9d4041a5cE29";
-const BLOCKCHAIN = "base";
-const SANDBOX_MAX_MXN = 500; // Sandbox limit per onramp
+// Multi-chain support for EtherFuse
+export type Blockchain = "base" | "stellar" | "solana";
+
+export const CHAIN_CONFIG: Record<Blockchain, {
+  cetesIdentifier: string;
+  customerId: string;
+  bankAccountId: string;
+  wallet: string;
+  label: string;
+  explorer: string;
+}> = {
+  base: {
+    cetesIdentifier: "0xcC77c598d42f2f78Beb42C91d12B9d4041a5cE29",
+    customerId: process.env.ETHERFUSE_DEMO_CUSTOMER_ID ?? "",
+    bankAccountId: process.env.ETHERFUSE_DEMO_BANK_ACCOUNT_ID ?? "",
+    wallet: process.env.ETHERFUSE_DEMO_WALLET ?? "",
+    label: "Base (EVM)",
+    explorer: "https://sepolia.basescan.org",
+  },
+  stellar: {
+    cetesIdentifier: "CETES:GC3CW7EDYRTWQ635VDIGY6S4ZUF5L6TQ7AA4MWS7LEQDBLUSZXV7UPS4",
+    customerId: process.env.ETHERFUSE_STELLAR_CUSTOMER_ID ?? "81d4aa26-bcf8-419a-b573-f5b401315c97",
+    bankAccountId: process.env.ETHERFUSE_STELLAR_BANK_ACCOUNT_ID ?? "6885bacd-07b4-44e1-b954-fb6765f4d09f",
+    wallet: process.env.ETHERFUSE_STELLAR_WALLET ?? "GCVVJDPEBCJLRBKDXETMSK7U4NWSP7FILJ55XRJXN2TY53VX5HC5HISE",
+    label: "Stellar",
+    explorer: "https://stellar.expert/explorer/testnet",
+  },
+  solana: {
+    cetesIdentifier: "AvvetPGuuB5FD5m86fpw3LtDKyQoUFT1mG9WarNQLW4q",
+    customerId: process.env.ETHERFUSE_SOLANA_CUSTOMER_ID ?? "",
+    bankAccountId: process.env.ETHERFUSE_SOLANA_BANK_ACCOUNT_ID ?? "",
+    wallet: process.env.ETHERFUSE_SOLANA_WALLET ?? "",
+    label: "Solana",
+    explorer: "https://explorer.solana.com",
+  },
+};
+
+// Default for backwards compat
+const DEFAULT_BLOCKCHAIN: Blockchain = "stellar";
+const SANDBOX_MAX_MXN = 500;
 
 function headers() {
   return { "Authorization": API_KEY, "Content-Type": "application/json" };
@@ -65,10 +101,13 @@ export interface EfCustomer {
 
 // ── 1. Get available assets ────────────────────────────────
 
-export async function getAssets(wallet?: string): Promise<EfAsset[]> {
-  const w = wallet ?? process.env.ETHERFUSE_DEMO_WALLET ?? "0x0000000000000000000000000000000000000000";
+export async function getAssets(
+  blockchain: Blockchain = DEFAULT_BLOCKCHAIN,
+  wallet?: string
+): Promise<EfAsset[]> {
+  const w = wallet ?? CHAIN_CONFIG[blockchain].wallet;
   const res = await ef<{ assets: EfAsset[] } | EfAsset[]>(
-    `/ramp/assets?blockchain=${BLOCKCHAIN}&currency=MXN&wallet=${w}`
+    `/ramp/assets?blockchain=${blockchain}&currency=MXN&wallet=${w}`
   );
   return Array.isArray(res) ? res : res.assets;
 }
@@ -92,19 +131,21 @@ export async function createQuote(
   type: "onramp" | "offramp",
   sourceAmount: number,
   customerId: string,
-  walletAddress: string
+  walletAddress: string,
+  blockchain: Blockchain = DEFAULT_BLOCKCHAIN
 ): Promise<EfQuote> {
   const quoteId = crypto.randomUUID();
+  const cetesId = CHAIN_CONFIG[blockchain].cetesIdentifier;
 
   const body = {
     quoteId,
     customerId,
-    blockchain: BLOCKCHAIN,
+    blockchain,
     sourceAmount: sourceAmount.toString(),
     quoteAssets: {
       type,
-      sourceAsset: type === "onramp" ? "MXN" : CETES_IDENTIFIER,
-      targetAsset: type === "onramp" ? CETES_IDENTIFIER : "MXN",
+      sourceAsset: type === "onramp" ? "MXN" : cetesId,
+      targetAsset: type === "onramp" ? cetesId : "MXN",
     },
   };
 
@@ -176,9 +217,10 @@ export async function onrampMXNtoCETES(
   customerId: string,
   bankAccountId: string,
   walletAddress: string,
-  simulateSandbox = true
-): Promise<{ quote: EfQuote; order: EfOrder }> {
-  const quote = await createQuote("onramp", amountMXN, customerId, walletAddress);
+  simulateSandbox = true,
+  blockchain: Blockchain = DEFAULT_BLOCKCHAIN
+): Promise<{ quote: EfQuote; order: EfOrder; blockchain: Blockchain }> {
+  const quote = await createQuote("onramp", amountMXN, customerId, walletAddress, blockchain);
   const order = await createOrder(quote.quoteId, bankAccountId, walletAddress, "onramp");
 
   // In sandbox: auto-simulate fiat deposit so we see the full flow
@@ -191,7 +233,7 @@ export async function onrampMXNtoCETES(
     }
   }
 
-  return { quote, order };
+  return { quote, order, blockchain };
 }
 
 /**
@@ -202,11 +244,12 @@ export async function offrampCETEStoMXN(
   amountCETES: number,
   customerId: string,
   bankAccountId: string,
-  walletAddress: string
-): Promise<{ quote: EfQuote; order: EfOrder }> {
-  const quote = await createQuote("offramp", amountCETES, customerId, walletAddress);
+  walletAddress: string,
+  blockchain: Blockchain = DEFAULT_BLOCKCHAIN
+): Promise<{ quote: EfQuote; order: EfOrder; blockchain: Blockchain }> {
+  const quote = await createQuote("offramp", amountCETES, customerId, walletAddress, blockchain);
   const order = await createOrder(quote.quoteId, bankAccountId, walletAddress, "offramp");
-  return { quote, order };
+  return { quote, order, blockchain };
 }
 
 // ── Legacy compat ─────────────────────────────────────────

@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/server/prisma";
 import { getAuthContext } from "@/server/auth";
-import { onrampMXNtoCETES } from "@/server/services/etherfuseService";
+import { onrampMXNtoCETES, CHAIN_CONFIG, type Blockchain } from "@/server/services/etherfuseService";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const schema = z.object({
   amountMXN: z.number().positive(),
-  walletAddress: z.string().default(""),
-  customerId: z.string().default(""),
-  bankAccountId: z.string().default(""),
+  blockchain: z.enum(["base", "stellar", "solana"]).default("stellar"),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,13 +24,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const amountMXN = parsed.data.amountMXN;
-  const walletAddress = parsed.data.walletAddress || process.env.ETHERFUSE_DEMO_WALLET || "";
-  const customerId = parsed.data.customerId || process.env.ETHERFUSE_DEMO_CUSTOMER_ID || "";
-  const bankAccountId = parsed.data.bankAccountId || process.env.ETHERFUSE_DEMO_BANK_ACCOUNT_ID || "";
+  const { amountMXN, blockchain } = parsed.data as { amountMXN: number; blockchain: Blockchain };
+  const config = CHAIN_CONFIG[blockchain];
+
+  if (!config.customerId || !config.bankAccountId) {
+    return NextResponse.json({
+      error: `${config.label} no está configurado. Solo Stellar y Base están disponibles.`,
+    }, { status: 400 });
+  }
 
   try {
-    const { quote, order } = await onrampMXNtoCETES(amountMXN, customerId, bankAccountId, walletAddress, true);
+    const { quote, order } = await onrampMXNtoCETES(
+      amountMXN, config.customerId, config.bankAccountId, config.wallet, true, blockchain
+    );
     const destAmount = typeof quote.destinationAmount === "string" ? parseFloat(quote.destinationAmount) : quote.destinationAmount;
 
     const position = await prisma.treasuryPosition.create({
@@ -55,9 +59,14 @@ export async function POST(req: NextRequest) {
         feeBps: parseInt(quote.feeBps as any),
         sourceMXN: amountMXN,
         destinationCETES: destAmount,
+        blockchain,
+        blockchainLabel: config.label,
+        cetesIdentifier: config.cetesIdentifier,
+        wallet: config.wallet,
+        explorerUrl: config.explorer,
         isReal: true,
       },
-      message: `✅ ${amountMXN.toLocaleString()} MXN → ${destAmount.toFixed(4)} CETES | APY: 9.1%`,
+      message: `✅ ${amountMXN.toLocaleString()} MXN → ${destAmount.toFixed(4)} CETES en ${config.label} | APY: 9.1%`,
     }, { status: 201 });
   } catch (err: any) {
     console.error("[Treasury onramp]", err);
